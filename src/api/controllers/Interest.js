@@ -1,21 +1,6 @@
 const Interest = require("../models/Interest");
 
-// const getInterest = async (req, res, next) => {
-//     try {
-//         const query = req.params.interest;
-//         const results = await Interest.find({ interest: query }).populate("user", "email");
-//         console.log("query:", query);
-//         console.log("query:", query);
-//         const emails = results
-//           .map((entry) => entry.user?.email)
-//           .filter(Boolean);
-//         return res.status(200).json(emails);
 
-//     } catch (error) {
-//         return res.status(400).json("No se han podido conseguir");
-  
-//     }
-// }
 //obtiene todos los intereses, catalogo para frontend
 const getInterest = async (req, res, next) => {
     try {
@@ -29,7 +14,7 @@ const getInterest = async (req, res, next) => {
 //añade interest si no existe (solo el admin) (pendiente seed)
 const postInterest = async (req, res, next) => {
     try {
-        interest = await Interest.findOne({ name: req.body.name });
+        interest = await Interest.findOne({ interest: req.body.name });
         if (interest) {
             return res.status(400).json("Ya existe")
         }
@@ -53,14 +38,18 @@ const postInterest = async (req, res, next) => {
 //     }
 // }
 
-// const deleteInterest = async (req, res, next) => {
-//     const { id } = req.param;
-    
-//     const findInterest = Interest.findById(id).map((interest) => {interest } )
-// }
+ const deleteInterest = async (req, res, next) => {
+     const { id } = req.params;    
+     const findInterest = await Interest.findByIdAndDelete(id);
+     
+     return res.status(200).json({
+       message: "Elemento eliminado",
+       elemento: findInterest,
+     });
+ }
 
 module.exports = {
   getInterest,
   postInterest,
-  updateInterest,
+  deleteInterest   
 };

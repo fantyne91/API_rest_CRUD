@@ -1,10 +1,10 @@
-const { getInterest, postInterest, updateInterest } = require("../controllers/Interest");
+const { getInterest, postInterest, deleteInterest } = require("../controllers/Interest");
 
 const interestRouter = require("express").Router();
 
 
-interestRouter.get("/:interest", getInterest);
-interestRouter.post("/:id", postInterest);
-interestRouter.put("/:id", updateInterest);
+interestRouter.get("/", getInterest);
+interestRouter.post("/", postInterest);
+ interestRouter.delete("/:id", deleteInterest);
 
 module.exports = interestRouter;

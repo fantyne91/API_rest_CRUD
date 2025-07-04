@@ -24,7 +24,17 @@ app.listen(3000, () => {
   console.log("http://localhost:3000");
 });
 
-// todas las rutas que no tengan respuesta entrarán por aquí
+//Middleware error?? todas las rutas que no tengan respuesta entrarán por aquí
 app.use((req, res, next) => {
-  return res.status(404).json("Route not found!!!");
+  return res.status(404).json("Route not found");
 });
+//Middleware error??
+/*
+app.use("*", (req,res,next)=>{
+  const error= new Error ("route not found");
+  error.status=404;
+  next(error);
+  })
+app.use((error, req, res, next) => { 
+  return res.status(error.status || 500).json(error.message || Unexpected error)
+}*/

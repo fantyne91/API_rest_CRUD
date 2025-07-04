@@ -7,7 +7,7 @@ const Schema = mongoose.Schema;
 const interestSchema = new Schema(
   {
     // user: { type: mongoose.Types.ObjectId, ref: "users" },
-    interest: [{ type: String, required: true, unique: true }],
+    name: { type: String, required: true, unique: true},
   },
   {
     timestamps: true,
