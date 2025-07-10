@@ -1,7 +1,8 @@
 /**CRUD create read update delete */
-
+const bcrypt = require("bcrypt");
 const User = require("../models/User")
 const Interest = require("../models/Interest");
+const { generateJWT } = require("../../utils/jwt");
 
 const getUsers = async (req, res, next) => {
     try {
@@ -12,6 +13,28 @@ const getUsers = async (req, res, next) => {
         return res.status(400).json("error")
     }
 };
+/* Login con bcrypt, si el email existe compara su password con la aportada body*/
+const login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    const emailExists = await User.findOne({ email });
+
+    if (!emailExists) {
+      return res.status(400).json({ message: "Usuario o contraseña incorrectos" });
+    }
+    if (bcrypt.compareSync(password, emailExists.password)) {
+      const token = generateJWT(emailExists._id);
+      
+      return res.status(200).json({token, emailExists});
+    } else {
+      return res.status(400).json({ message: "Usuario o contraseña incorrectos" });
+    }
+    
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+}
 /*Error si el User con email ya existe*/
 const postUsers = async (req, res, next) => {
   try {    
@@ -89,6 +112,7 @@ const postUserInterest = async (req, res, next) => {
 }
 module.exports = {
   getUsers,
+  login,
   postUsers,
   updateUsers,
   deleteUsers,
