@@ -3,7 +3,24 @@ const bcrypt = require("bcrypt");
 const User = require("../models/User")
 const Interest = require("../models/Interest");
 const { generateJWT } = require("../../utils/jwt");
+const { deleteFile } = require("../../utils/deleteImgFile");
 
+
+/**
+**Obtiene todos los usuarios de la base de datos
+*
+ * @async
+ * @function getUsers
+ * @permission admin
+ * @param {Object} req - Objeto de solicitud HTTP (Express).
+ * @param {Object} res - Objeto de respuesta HTTP (Express).
+ * @param {Function} next - Función next de Express.
+ * @returns {Promise<void>} Respuesta JSON con todos los usuarios.
+ *
+ * @example
+ *  Llamada a la ruta (token de admin)
+ * GET /users
+ */
 const getUsers = async (req, res, next) => {
     try {
         const users = await User.find().populate("interests", "name");
@@ -13,7 +30,26 @@ const getUsers = async (req, res, next) => {
         return res.status(400).json("error")
     }
 };
-/* Login con bcrypt, si el email existe compara su password con la aportada body*/
+
+
+/**
+ ** Inicia sesión de usuario. Valida email y contraseña usando bcrypt.
+ *
+ * @async
+ * @function login
+ * @param {Object} req - Objeto de solicitud HTTP (Express).
+ * @param {Object} res - Objeto de respuesta HTTP (Express).
+ * @param {Function} next - Función next de Express.
+ * @returns {Promise<void>} Devuelve token JWT si las credenciales son correctas.
+ *
+ * @example
+ * POST /login
+ * Body:
+ * {
+ *    "email": "example@email.com",
+ *    "password": "123456"
+ * }
+ */
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -35,7 +71,26 @@ const login = async (req, res, next) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 }
-/*Error si el User con email ya existe*/
+
+/**
+ ** Crea un nuevo usuario.  Verifica si el email ya existe antes de crear.
+ *
+ * @async
+ * @function postUsers
+  * @param {Object} req - Objeto de solicitud HTTP (Express).
+ * @param {Object} res - Objeto de respuesta HTTP (Express).
+ * @param {Function} next - Función next de Express.
+ * @returns {Promise<void>} Devuelve el usuario creado o error.
+ *
+ * @example
+ * POST /users
+ * Body:
+ * {
+ *    "name": "Maria",
+ *    "email": "maria@email.com",
+ *    "password": "secret"
+ * }
+ */
 const postUsers = async (req, res, next) => {
   try {    
     const newUser = new User(req.body);
@@ -43,40 +98,105 @@ const postUsers = async (req, res, next) => {
     if (emailExists) {
       return res.status(400).json({ message: "El email ya está en uso" });
     }
+
+    if (req.file) {
+      newUser.img = req.file.path;
+    }
       const saveUser = await newUser.save();
       return res.status(201).json(saveUser);    
   } catch (error) {
+    console.error(error);
     return res.status(400).json("error");
+    
   }
 };
 
+
+/**
+ ** Actualiza datos user por ID.
+ * Si el usuario no es admin, no puede cambiar el rol.
+ *
+ * @async
+ * @function updateUsers
+ * @permission admin | user
+ * @param {Object} req - Objeto de solicitud HTTP (Express).
+ * @param {Object} res - Objeto de respuesta HTTP (Express).
+ * @param {Function} next - Función next de Express.
+ * @returns {Promise<void>} Devuelve el usuario actualizado.
+ *
+ * @example
+ * PATCH /users/664cabc123456789
+ * Body:
+ * {
+ *    "name": "Maria Updated"
+ * }
+ */
 const updateUsers = async (req, res, next) => {
   try {
       const { id } = req.params;
-      const newUser = new User(req.body);
-      newUser._id = id;
-      const updatedUser = await User.findByIdAndUpdate(id, newUser, { new: true })
+    const { role, ...restData } = req.body; // Exclude role from update
+    if (role && req.user.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "No tienes permiso para cambiar el rol" });
+    }
+   
+    let dataToUpdate = role ? req.body : restData; // If role is provided, update it, otherwise update the rest of the data
+    // Guardamos el path de la imagen si existe en dataToUpdate, con cloudinau
+    if (req.file) {
+      dataToUpdate.img = req.file.path;
+    }
+      const updatedUser = await User.findByIdAndUpdate(id, dataToUpdate, { new: true })
       return res.status(200).json(updatedUser);
 
   } catch (error) {
     return res.status(400).json("error");
   }
 }; 
-/*Delete user by id */
+
+
+/**
+ ** Elimina un usuario por su ID y elimina la imagen asociada en Cloudinary.
+ *
+ * @async
+ * @function deleteUsers
+  * @permission admin | user
+ * @param {Object} req - Objeto de solicitud HTTP (Express).
+ * @param {Object} res - Objeto de respuesta HTTP (Express).
+ * @returns {Promise<void>} Envía una respuesta JSON con el usuario eliminado o un error.
+ */
 const deleteUsers = async (req, res, next) => {
   try {
     const { id } = req.params;
-      const deletedMovie = await User.findByIdAndDelete(id);
+    const deletedUser = await User.findByIdAndDelete(id);
+    deleteFile(deletedUser.img); // Elimina la imagen del usuario de Cloudinary
+
       return res.status(200).json({
           message: "Elemento eliminado",
-          elemento: deletedMovie
+          elemento: deletedUser
       })
    
   } catch (error) {
+    console.error(error);
     return res.status(400).json("error");
   }
 };
-/*Post interest en user, si no existe en bd da err, si ya lo tiene en sus intereses da err, si el user no existe da err*/
+
+/**
+ ** Añade un interés a un usuario.
+ *
+ * @async
+ * @function postUserInterest
+ * @permission user | admin
+ * @param {Object} req - Objeto de solicitud HTTP (Express).
+ * @param {Object} res - Objeto de respuesta HTTP (Express).
+ * @param {string} req.params.id - ID del usuario a introducir interest.
+ * @param {string} req.body.interest - Nombre del interés a añadir.
+ * @returns {Promise<void>} Envía una respuesta JSON con el usuario actualizado o un error.
+ *
+ * @throws {404} Si el usuario no existe o el interés no está en la base de datos.
+ * @throws {400} Si el usuario ya tiene ese interés.
+ */
 const postUserInterest = async (req, res, next) => {
   try {
     const { id:userId } = req.params;

@@ -1,8 +1,11 @@
 require("dotenv").config();
 const userRouter = require("./src/api/routes/User");
 const interestRouter = require("./src/api/routes/Interest");
+
 const { connectDB } = require("./src/config/db");
 connectDB(); 
+const { connectCloudinary } = require("./src/config/cloudinary");
+connectCloudinary();
 
 // nos traemos el módulo express que previamente hemos instalado
 const express = require("express");
