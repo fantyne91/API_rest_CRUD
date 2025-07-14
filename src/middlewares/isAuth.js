@@ -1,4 +1,8 @@
 
+const User = require("../api/models/User");
+const { verifyJWT } = require("../utils/jwt");
+
+
 /**
  ** Middleware que verifica si el usuario esta autentificado.
  * - Obtiene el token JWT del header Authorization.
@@ -11,12 +15,9 @@
  * @function isAuth
  * @param {Object} req - Objeto de solicitud HTTP (Express).
  * @param {Object} res - Objeto de respuesta HTTP (Express).
- * @param {import('express').NextFunction} next - Función middleware siguiente.
+ * @param {Function} next - Función middleware siguiente.
  * @returns {void}
 */
-const User = require("../api/models/User");
-const { verifyJWT } = require("../utils/jwt");
-
 const isAuth = async (req, res, next) => { 
     try {
         const [,token] = req.headers.authorization.split(" ");

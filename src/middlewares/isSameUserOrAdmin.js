@@ -8,7 +8,7 @@
  * @function isSameUserOrAdmin
  * @param {Object} req - Objeto de solicitud HTTP (Express).
  * @param {Object} res - Objeto de respuesta HTTP (Express).
- * @param {import('express').NextFunction} next - Función middleware siguiente.
+ * @param {Function} next - Función middleware siguiente.
  * @returns {void}
  */
 
