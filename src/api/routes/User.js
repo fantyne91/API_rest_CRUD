@@ -19,6 +19,6 @@ userRouter.post("/register", upload.single("img"), postUsers);
 userRouter.post("/login", login);
 userRouter.put("/:id",isAuth, isSameUserOrAdmin, upload.single("img"),  updateUsers);
 userRouter.delete("/:id", isAuth, isSameUserOrAdmin, deleteUsers); 
-userRouter.patch("/:id/interests",isAuth,isSameUserOrAdmin, postUserInterest);
+userRouter.patch("/:id",isAuth,isSameUserOrAdmin, postUserInterest);
 
 module.exports = userRouter;

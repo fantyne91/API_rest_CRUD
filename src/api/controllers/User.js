@@ -200,13 +200,14 @@ const deleteUsers = async (req, res, next) => {
 const postUserInterest = async (req, res, next) => {
   try {
     const { id:userId } = req.params;
-    const { interest } = req.body;  
-    
+    const { name } = req.body;  
+    console.log("Interest:", name);
+
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
-    const interestDoc = await Interest.findOne({ interest });
+    const interestDoc = await Interest.findOne({ name });
     if (!interestDoc) {
       return res
         .status(404)
